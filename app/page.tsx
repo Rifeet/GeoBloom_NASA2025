@@ -1,103 +1,129 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import L from "leaflet";
+import Map from "./components/Map/Map";
+import VegetationChart from "./components/VegetationChart";
+
+interface BloomResult {
+  status: string;
+  intensity: string;
+  ndvi_mean: number;
+}
+
+interface PolygonInfo {
+  coordinates: number[][][];
+  center: L.LatLng;
+  bloomResult: BloomResult;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [polygonInfo, setPolygonInfo] = useState<PolygonInfo | null>(null);
+  const [plantType, setPlantType] = useState("Almond");
+  const [plantStage, setPlantStage] = useState("");
+  const [csvText, setCsvText] = useState(""); // For line chart
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Load CSV ONLY when polygonInfo is filled
+  useEffect(() => {
+    async function fetchCsv() {
+      const res = await fetch("/ee-chart.csv"); // Ensure file is in /public
+      const text = await res.text();
+      setCsvText(text);
+    }
+    if (polygonInfo?.bloomResult) fetchCsv();
+  }, [polygonInfo]);
+
+  return (
+    <div>
+      <h2>GeoBloom: Detect Bloom Areas</h2>
+      <div style={{ display: "flex" }}>
+        {/* Left Box */}
+        <div
+          style={{
+            flex: 1,
+            background: "#f0f0f0",
+            padding: "20px",
+            border: "1px solid #ccc",
+          }}
+        >
+          <h2>Left Box</h2>
+          <div style={{ flex: "1 1 100%" }}>
+            {/* Show bloom info if available */}
+            {polygonInfo?.bloomResult && (
+              <div
+                style={{
+                  padding: "10px",
+                  border: "1px solid #ccc",
+                  background: "#f9f9f9",
+                  marginBottom: "20px",
+                }}
+              >
+                <h4>Bloom Detection Result:</h4>
+                <p>Status: {polygonInfo.bloomResult.status}</p>
+                <p>Intensity: {polygonInfo.bloomResult.intensity}</p>
+                <p>NDVI Mean: {polygonInfo.bloomResult.ndvi_mean}</p>
+                <p>
+                  <strong>Plant Type:</strong> {plantType}
+                  <br />
+                  <strong>Plant Stage:</strong> {plantStage}
+                </p>
+              </div>
+            )}
+            {polygonInfo?.coordinates && (
+              <div
+                style={{
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  background: "#fff",
+                  marginBottom: "20px",
+                  fontSize: "0.95em",
+                }}
+              >
+                <h4>Polygon Coordinates:</h4>
+                <ol>
+                  {polygonInfo.coordinates[0].map(
+                    (coord: number[], idx: number) => (
+                      <li key={idx}>
+                        Lat: {coord[1].toFixed(6)}, Lng: {coord[0].toFixed(6)}
+                      </li>
+                    )
+                  )}
+                </ol>
+              </div>
+            )}
+
+            {/* Show the vegetation chart under the bloom info */}
+            {polygonInfo?.bloomResult && csvText && (
+              <VegetationChart csvText={csvText} />
+            )}
+
+            {/* BEFORE DRAWING */}
+            {!polygonInfo && <p>No polygon drawn yet.</p>}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Right Box */}
+        <div
+          style={{
+            flex: 1,
+            background: "#e0e0ff",
+            padding: "20px",
+            border: "1px solid #ccc",
+          }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <h2>Right Box</h2>
+          <div style={{ height: "500px", width: "100%" }}>
+            <Map
+              polygonInfo={polygonInfo}
+              setPolygonInfo={setPolygonInfo}
+              plantType={plantType}
+              setPlantType={setPlantType}
+              plantStage={plantStage}
+              setPlantStage={setPlantStage}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
