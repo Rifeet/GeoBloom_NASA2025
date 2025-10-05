@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation"; // For Next.js 13+ app directory
 import { useState, useEffect } from "react";
 import L from "leaflet";
 import Map from "./components/Map/Map";
@@ -18,6 +19,7 @@ interface PolygonInfo {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [polygonInfo, setPolygonInfo] = useState<PolygonInfo | null>(null);
   const [plantType, setPlantType] = useState("Almond");
   const [plantStage, setPlantStage] = useState("");
@@ -36,6 +38,43 @@ export default function Home() {
   return (
     <div>
       <h2>GeoBloom: Detect Bloom Areas</h2>
+
+      {/* Ecologist Labeled Button */}
+      <div style={{ marginBottom: "20px" }}>
+        <button
+          style={{
+            background: "#4B9CD3",
+            border: "1px solid #ccc",
+            fontWeight: "bold",
+            padding: "8px 16px",
+            color: "#fff",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+          onClick={() => router.push("ecologist")} // Adjust this path if needed
+        >
+          farmers
+        </button>
+      </div>
+
+      {/* Ecologist Labeled Button */}
+      <div style={{ marginBottom: "20px" }}>
+        <button
+          style={{
+            background: "#4B9CD3",
+            border: "1px solid #ccc",
+            fontWeight: "bold",
+            padding: "8px 16px",
+            color: "#fff",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+          onClick={() => router.push("/ecologist")} // Adjust this path if needed
+        >
+          Ecologist Labeled
+        </button>
+      </div>
+
       <div style={{ display: "flex" }}>
         {/* Left Box */}
         <div
